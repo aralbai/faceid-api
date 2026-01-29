@@ -26,3 +26,13 @@ export const getAttendances = async (req, res) => {
     return res.status(500).json("server error");
   }
 };
+
+export const getLastFaceAttendance = async (req, res) => {
+  try {
+    const lastAttendance = await Attendance.findOne().sort({ _id: -1 });
+
+    return res.status(200).json(lastAttendance);
+  } catch (error) {
+    return res.status(500).json("server error");
+  }
+};

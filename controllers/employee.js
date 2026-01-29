@@ -1,9 +1,6 @@
 import DigestFetch from "digest-fetch";
 import Employee from "../model/Empleyee.js";
 
-const client = new DigestFetch("admin", "Abc112233");
-const CAMERA_HOST = "192.168.88.143";
-
 export const getAllEmployee = async (req, res) => {
   try {
     const employee = await Employee.find();
@@ -15,74 +12,66 @@ export const getAllEmployee = async (req, res) => {
 };
 
 export const createEmployee = async (req, res) => {
-  const { employeeNo, name } = req.body;
+  try {
+    const { employeeNo, name } = req.body;
 
-  // 1️⃣ Hikvision'ga user qo‘shamiz
-  const hikRes = await client.fetch(
-    `http://${CAMERA_HOST}/ISAPI/AccessControl/UserInfo/Record?format=json`,
-    {
+    if (!employeeNo || !name) {
+      return res.status(400).json({ message: "employeeNo va name majburiy" });
+    }
+
+    const username = process.env.CAMERA_USERNAME; // admin
+    const password = process.env.CAMERA_PASSWORD; // camera password
+    const cameraIp = process.env.IP; // 192.168.1.64
+
+    const client = new DigestFetch(username, password);
+
+    const hikvisionUrl = `http://192.168.88.143/ISAPI/AccessControl/UserInfo/Record?format=json`;
+
+    console.log(hikvisionUrl);
+
+    // Hikvision PERSON payload
+    const payload = {
+      UserInfo: {
+        employeeNo: employeeNo,
+        name: name,
+        userType: "normal",
+        Valid: {
+          enable: true,
+          beginTime: "2024-01-01T00:00:00",
+          endTime: "2030-12-31T23:59:59",
+        },
+        doorRight: "1",
+        RightPlan: [
+          {
+            doorNo: 1,
+            planTemplateNo: "1",
+          },
+        ],
+      },
+    };
+
+    const response = await client.fetch(hikvisionUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
       },
-      body: JSON.stringify({
-        UserInfo: [
-          {
-            employeeNo,
-            name,
-            userType: "normal",
-            Valid: {
-              enable: true,
-              beginTime: "2025-01-01T00:00:00",
-              endTime: "2035-01-01T23:59:59",
-            },
-          },
-        ],
-      }),
-    },
-  );
+      body: JSON.stringify(payload),
+    });
 
-  if (!hikRes.ok) {
-    console.log(hikRes);
-    return res.status(400).json({ error: "Hikvision user create failed" });
+    const result = await response.json();
+
+    if (result.statusCode !== 1) {
+      return res.status(400).json({
+        message: "Hikvision person qo‘shilmadi",
+        hikvision: result,
+      });
+    }
+
+    return res.status(201).json({ message: "Person muvaffaqiyatli yaratildi" });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
-
-  // 2️⃣ MongoDB ga saqlaymiz
-  const user = await Employee.create({
-    employeeNo,
-    name,
-    faceRegistered: false,
-  });
-
-  res.json(user);
-};
-
-export const uploadFace = async (req, res) => {
-  const { id } = req.params;
-  const employee = await Employee.findById(id);
-  if (!employee) return res.status(404).json({ error: "employee not found" });
-
-  const image = req.file.buffer;
-
-  const hikRes = await client.fetch(
-    `http://${CAMERA_HOST}/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/octet-stream",
-        employeeNo: employee.employeeNo,
-      },
-      body: image,
-    },
-  );
-
-  if (!hikRes.ok) {
-    return res.status(400).json({ error: "Face upload failed" });
-  }
-
-  employee.faceRegistered = true;
-  await employee.save();
-
-  res.json({ success: true });
 };

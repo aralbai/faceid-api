@@ -1,9 +1,15 @@
 import express from "express";
-import { createAttendance, getAttendances } from "../controllers/attendance.js";
+import {
+  createAttendance,
+  getAttendances,
+  getLastFaceAttendance,
+} from "../controllers/attendance.js";
 
 const router = express.Router();
 
 router.get("/", getAttendances);
+
+router.get("/last", getLastFaceAttendance);
 
 router.post("/", createAttendance);
 
