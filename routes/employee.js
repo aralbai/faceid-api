@@ -4,8 +4,6 @@ import {
   getAllEmployee,
   getAllEmployeesFromTerminal,
   syncAllEmployeesToTerminal,
-  syncFacesToTerminal,
-  testSingleFace,
 } from "../controllers/employee.js";
 
 const router = express.Router();
@@ -16,9 +14,7 @@ router.post("/getallfromterminal", getAllEmployeesFromTerminal);
 
 router.post("/syncall", syncAllEmployeesToTerminal);
 
-router.post("/syncFacesToTerminal", syncFacesToTerminal);
-
-router.post("/test", testSingleFace);
+router.post("/syncFacesToTerminal", syncAllEmployeesToTerminal);
 
 router.delete("/deleteallfromterminal", deleteAllEmployeesFromTerminal);
 

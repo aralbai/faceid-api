@@ -5,6 +5,7 @@ import path from "path";
 import sharp from "sharp"; // Rasmlarni JPEG qilish uchun
 import FormData from "form-data";
 import axios from "axios";
+import { exec } from "child_process";
 
 // GET ALL EMPLOYEES FROM DB
 export const getAllEmployee = async (req, res) => {
@@ -159,155 +160,82 @@ export const syncAllEmployeesToTerminal = async (req, res) => {
 };
 
 // SYNC ALL FACE TO TERMINAL
-export const syncFacesToTerminal = async (req, res) => {
+
+export const syncAllFacesToTerminal = async (req, res) => {
+  const IMAGES_DIR = path.resolve("images");
+  const extensions = [".jpg", ".jpeg", ".png"];
+
+  const HIKVISION_URL =
+    "http://192.168.88.143/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json";
+
   try {
-    const employees = await Employee.find({});
-    const imagesDir = path.join(process.cwd(), "images");
-
-    const username = process.env.CAMERA_USERNAME;
-    const password = process.env.CAMERA_PASSWORD;
-    const client = new DigestFetch(username, password);
-    const faceUrl = `http://192.168.88.143/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json`;
-
-    let successCount = 0;
-    let errorCount = 0;
-    let missingCount = 0;
-
-    const allFiles = fs.readdirSync(imagesDir);
+    const employees = await Employee.find();
+    const results = [];
 
     for (const emp of employees) {
-      const searchPattern = emp.employeeNo.includes("-")
-        ? emp.employeeNo
-        : `${emp.employeeNo.slice(0, 1)}-${emp.employeeNo.slice(1)}`;
+      const employeeNo = emp.employeeNo; // A123456
+      const imageBaseName = employeeNo.replace(/^([A-Z])/, "$1-"); // A-123456
 
-      const fileName = allFiles.find(
-        (f) => f.startsWith(searchPattern) && /\.(jpg|jpeg|png|bmp)$/i.test(f),
-      );
+      let imagePath = null;
 
-      if (!fileName) {
-        missingCount++;
+      for (const ext of extensions) {
+        const fullPath = path.join(IMAGES_DIR, imageBaseName + ext);
+        if (fs.existsSync(fullPath)) {
+          imagePath = fullPath;
+          break;
+        }
+      }
+
+      if (!imagePath) {
+        results.push({
+          employeeNo,
+          status: "SKIPPED",
+          reason: "Image topilmadi",
+        });
         continue;
       }
 
+      console.log(imagePath);
+      // curl command — 1:1 siz bergan buyruq
+      const curlCmd = `
+curl --digest --user admin:Abc112233 \
+-F 'FaceDataRecord={"faceLibType":"blackFD","FDID":"1","FPID":"${employeeNo}"};type=application/json' \
+-F 'FaceImage=@${imagePath};type=image/jpeg' \
+'${HIKVISION_URL}'
+`;
+
       try {
-        const filePath = path.join(imagesDir, fileName);
-
-        const imageBuffer = await sharp(filePath)
-          .resize(600, 600, { fit: "inside" })
-          .jpeg({ quality: 60, chromaSubsampling: "4:2:0" })
-          .toBuffer();
-
-        const base64Image = imageBuffer.toString("base64");
-
-        // MUHIM: Ba'zi terminallar aynan mana shu strukturani kutadi
-        const payload = {
-          faceLibType: "blackFD",
-          FDID: "1",
-          FPID: emp.employeeNo,
-          faceData: base64Image,
-          faceURL: "", // Ba'zi modellar buni bo'sh bo'lsa ham talab qiladi
-          faceId: "", // Bo'sh string sifatida qo'shib ko'ramiz
-        };
-
-        // DIQQAT: Agar bu ham ishlamasa, payloadni FaceDataRecord ob'ektisiz yuboramiz
-        // Chunki "MessageParametersLack" ko'pincha ob'ekt ichidagi maydon yetishmasligini bildiradi
-
-        const response = await client.fetch(faceUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+        const output = await new Promise((resolve, reject) => {
+          exec(curlCmd, (error, stdout, stderr) => {
+            if (error) return reject(stderr || error.message);
+            resolve(stdout);
+          });
         });
 
-        const result = await response.json();
-
-        if (result.statusCode === 1 || result.statusString === "OK") {
-          successCount++;
-          console.log(`✅ OK: ${emp.employeeNo}`);
-        } else {
-          console.error(
-            `❌ Xato [${emp.employeeNo}]: ${result.subStatusCode || result.statusString}`,
-          );
-          errorCount++;
-        }
-      } catch (sharpError) {
-        errorCount++;
+        results.push({
+          employeeNo,
+          status: "SUCCESS",
+          response: output.trim(),
+        });
+      } catch (err) {
+        results.push({
+          employeeNo,
+          status: "FAILED",
+          error: err.toString(),
+        });
       }
-      await new Promise((r) => setTimeout(r, 250));
+
+      // await new Promise((r) => setTimeout(r, 1500));
     }
 
     return res.status(200).json({
-      message: "Sinxronizatsiya yakunlandi",
-      stats: {
-        total: employees.length,
-        success: successCount,
-        failed: errorCount,
-        missing: missingCount,
-      },
+      message: "syncAllFace yakunlandi",
+      total: employees.length,
+      results,
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: error.message });
-  }
-};
-
-//test single
-export const testSingleFace = async (req, res) => {
-  try {
-    const employeeNo = "A071361";
-    const IP = "192.168.88.143";
-    const PORT = 80;
-    const USERNAME = "admin";
-    const PASSWORD = "Abc112233";
-
-    const imagePath = path.join(process.cwd(), "images", `${employeeNo}.jpg`);
-    if (!fs.existsSync(imagePath)) {
-      return res.status(404).json({ message: "Rasm topilmadi" });
-    }
-
-    const client = new DigestFetch(USERNAME, PASSWORD);
-    const form = new FormData();
-    form.setBoundary("MIME_boundary");
-
-    const faceData = JSON.stringify({
-      faceLibType: "blackFD",
-      FDID: "1",
-      FPID: employeeNo,
-    });
-
-    form.append("FaceDataRecord", faceData, {
-      contentType: "application/json",
-    });
-
-    // 3. Rasmni Buffer sifatida qo'shish
-    form.append("FaceImage", fs.createReadStream(imagePath), {
-      filename: "image.jpg",
-      contentType: "image/jpeg",
-    });
-    console.log(form);
-
-    const url = `http://${IP}/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json`;
-
-    // 4. So'rovni yuborish
-    await client
-      .fetch(url, {
-        method: "POST",
-        body: form,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      })
-      .then((res) => res.json())
-      .then((data) => {
-        return res.status(200).json(data);
-      })
-      .catch((err) => {
-        return res.status(500).json(err);
-      });
-  } catch (error) {
-    console.error("Xatolik:", error);
     return res.status(500).json({
-      message: "Server xatosi",
+      message: "Server error",
       error: error.message,
     });
   }

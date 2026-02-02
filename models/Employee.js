@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 
 const employeeSchema = new mongoose.Schema({
+  employeeNo: String,
   name: String,
   unvon: String,
   lavozim: String,
-  employeeNo: String,
   pnfl: String,
   bolim: String,
 });
