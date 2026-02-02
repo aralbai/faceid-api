@@ -160,7 +160,6 @@ export const syncAllEmployeesToTerminal = async (req, res) => {
 };
 
 // SYNC ALL FACE TO TERMINAL
-
 export const syncAllFacesToTerminal = async (req, res) => {
   const IMAGES_DIR = path.resolve("images");
   const extensions = [".jpg", ".jpeg", ".png"];

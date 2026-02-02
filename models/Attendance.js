@@ -1,8 +1,16 @@
 import mongoose from "mongoose";
 
 const attendanceSchema = new mongoose.Schema({
-  jurnalId: mongoose.Schema.Types.ObjectId,
-  bolim: String,
+  jurnalId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+  },
+  employeeId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Employee", // 👈 Employee model nomi
+    required: true,
+  },
+  employeeNo: String,
   name: String,
   date: Date,
 });

@@ -1,5 +1,6 @@
 import Jurnal from "../models/Jurnal.js";
 import Attendance from "../models/Attendance.js";
+import Employee from "../models/Employee.js";
 
 export const faceEventHandler = async (req, res) => {
   // ⚠️ Kamera tez qaytish kutadi
@@ -28,13 +29,19 @@ export const faceEventHandler = async (req, res) => {
 
   const payload = {
     name: event.AccessControllerEvent.name,
-    bolim: event.AccessControllerEvent.employeeNoString,
+    employeeNo: event.AccessControllerEvent.employeeNoString,
     date: event.dateTime,
   };
 
   try {
-    const jurnal = await Jurnal.findById("697b76345bac745f6fd2df00");
+    const jurnal = await Jurnal.findById("6979b853e358ab5d3fb44cb1");
     if (!jurnal) return;
+
+    const employee = await Employee.findOne({
+      employeeNo: payload.employeeNo,
+    });
+    console.log(employee);
+    if (!employee) return;
 
     const exists = await Attendance.findOne({
       jurnalId: jurnal._id,
@@ -45,12 +52,13 @@ export const faceEventHandler = async (req, res) => {
 
     await Attendance.create({
       jurnalId: jurnal._id,
+      employeeId: employee._id,
+      employeeNo: payload.employeeNo,
       name: payload.name,
-      bolim: payload.bolim,
       date: payload.date,
     });
 
-    const attendances = await Attendance.find();
+    const attendances = await Attendance.find().populate("employeeId");
 
     global.io.emit("face-success", attendances);
   } catch (err) {

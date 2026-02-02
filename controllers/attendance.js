@@ -4,8 +4,9 @@ export const createAttendance = async (req, res) => {
   try {
     const newAttendance = new Attendance({
       jurnalId: req.body.jurnalId,
+      employeeId: req.body.employeeId,
+      employeeNo: req.body.bolim,
       name: req.body.name,
-      bolim: req.body.bolim,
       date: req.body.date,
     });
 
@@ -19,7 +20,7 @@ export const createAttendance = async (req, res) => {
 
 export const getAttendances = async (req, res) => {
   try {
-    const attendances = await Attendance.find();
+    const attendances = await Attendance.find().populate("employeeId");
 
     return res.status(200).json(attendances);
   } catch (error) {
@@ -29,7 +30,9 @@ export const getAttendances = async (req, res) => {
 
 export const getLastFaceAttendance = async (req, res) => {
   try {
-    const lastAttendance = await Attendance.findOne().sort({ _id: -1 });
+    const lastAttendance = await Attendance.findOne()
+      .sort({ _id: -1 })
+      .populate("employeeId");
 
     return res.status(200).json(lastAttendance);
   } catch (error) {
