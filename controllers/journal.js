@@ -1,4 +1,4 @@
-import Jurnal from "../model/Jurnal.js";
+import Jurnal from "../models/Jurnal.js";
 
 export const createJurnal = async (req, res) => {
   try {

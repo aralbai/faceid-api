@@ -1,5 +1,5 @@
-import Jurnal from "../model/Jurnal.js";
-import Attendance from "../model/Attendance.js";
+import Jurnal from "../models/Jurnal.js";
+import Attendance from "../models/Attendance.js";
 
 export const faceEventHandler = async (req, res) => {
   // ⚠️ Kamera tez qaytish kutadi
