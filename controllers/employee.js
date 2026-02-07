@@ -18,6 +18,18 @@ export const getAllEmployee = async (req, res) => {
   }
 };
 
+export const getEmployeeByBolimId = async (req, res) => {
+  const { bolimId } = req.params;
+
+  try {
+    const employees = await Employee.find({ bolim: bolimId });
+
+    return res.status(200).json(employees);
+  } catch (error) {
+    return res.status(500).json("server error");
+  }
+};
+
 // GET ALL EMPLOYEES FROM TERMINAL
 export const getAllEmployeesFromTerminal = async (req, res) => {
   try {
@@ -90,15 +102,9 @@ export const syncAllEmployeesToTerminal = async (req, res) => {
     const password = process.env.CAMERA_PASSWORD;
     const client = new DigestFetch(username, password);
 
-    const deleteUrl = `http://192.168.88.143/ISAPI/AccessControl/UserInfo/Delete?format=json`;
-    const recordUrl = `http://192.168.88.143/ISAPI/AccessControl/UserInfo/Record?format=json`;
-
-    // 1. Terminalni tozalash (Bu sizda ishlagan usul)
-    await client.fetch(deleteUrl, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ UserInfoDelCond: { EmployeeNoList: [] } }),
-    });
+    const deleteUrl = `http://192.168.88.234/ISAPI/AccessControl/UserInfo/Delete?format=json`;
+    const recordUrl = `http://192.168.88.125/ISAPI/AccessControl/UserInfo/Record?format=json`;
+    console.log("here");
 
     const dbEmployees = await Employee.find({});
     if (dbEmployees.length === 0)
@@ -165,7 +171,7 @@ export const syncAllFacesToTerminal = async (req, res) => {
   const extensions = [".jpg", ".jpeg", ".png"];
 
   const HIKVISION_URL =
-    "http://192.168.88.143/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json";
+    "http://198.162.88.125/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json";
 
   try {
     const employees = await Employee.find();
@@ -194,7 +200,6 @@ export const syncAllFacesToTerminal = async (req, res) => {
         continue;
       }
 
-      console.log(imagePath);
       // curl command — 1:1 siz bergan buyruq
       const curlCmd = `
 curl --digest --user admin:Abc112233 \
@@ -209,6 +214,8 @@ curl --digest --user admin:Abc112233 \
             if (error) return reject(stderr || error.message);
             resolve(stdout);
           });
+
+          console.log(curlCmd);
         });
 
         results.push({

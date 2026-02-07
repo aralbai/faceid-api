@@ -7,7 +7,9 @@ import AttendanceRouter from "./routes/attendance.js";
 import JurnalRouter from "./routes/journal.js";
 import EmployeeRouter from "./routes/employee.js";
 import FaceEventRouter from "./routes/event.js";
+import BolimRouter from "./routes/bolim.js";
 import cors from "cors";
+import multer from "multer";
 
 dotenv.config();
 
@@ -16,7 +18,7 @@ const PORT = process.env.PORT;
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: "*",
   },
 });
 global.io = io;
@@ -28,6 +30,7 @@ io.on("connection", (socket) => {
 app.use(express.json());
 app.use(cors());
 app.use(express.static("public"));
+// app.use(multer().any());
 
 mongoose
   .connect("mongodb://127.0.0.1:27017/faceid")
@@ -38,6 +41,7 @@ app.use("/face", FaceEventRouter);
 app.use("/jurnal", JurnalRouter);
 app.use("/attendance", AttendanceRouter);
 app.use("/employee", EmployeeRouter);
+app.use("/bolim", BolimRouter);
 
 server.listen(PORT, () => {
   console.log(`🚀 Server + Socket.IO running on port ${PORT}...`);

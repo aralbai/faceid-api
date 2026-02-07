@@ -6,7 +6,7 @@ export const faceEventHandler = async (req, res) => {
   // ⚠️ Kamera tez qaytish kutadi
   res.status(200).send("OK");
 
-  const raw = req.body.event_log;
+  const raw = req.body.AccessControllerEvent;
   if (!raw) return;
 
   let event;
@@ -17,6 +17,7 @@ export const faceEventHandler = async (req, res) => {
     return;
   }
 
+  // console.log(event);
   if (
     event.eventType !== "AccessControllerEvent" ||
     event.AccessControllerEvent.majorEventType !== 5 ||
@@ -25,7 +26,7 @@ export const faceEventHandler = async (req, res) => {
     return;
   }
 
-  console.log("✅ FACE EVENT:", event.AccessControllerEvent.name);
+  console.log(event.ipAddress);
 
   const payload = {
     name: event.AccessControllerEvent.name,
@@ -40,7 +41,7 @@ export const faceEventHandler = async (req, res) => {
     const employee = await Employee.findOne({
       employeeNo: payload.employeeNo,
     });
-    console.log(employee);
+
     if (!employee) return;
 
     const exists = await Attendance.findOne({
