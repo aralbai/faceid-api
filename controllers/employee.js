@@ -36,7 +36,7 @@ export const getAllEmployeesFromTerminal = async (req, res) => {
   try {
     const client = new DigestFetch("admin", "Abc112233");
     const hikvisionUrl =
-      "http://192.0.0.64/ISAPI/AccessControl/UserInfo/Search?format=json";
+      "http://192.168.88.242/ISAPI/AccessControl/UserInfo/Search?format=json";
     let allUsers = [];
     let position = 0;
     const maxResults = 50;
@@ -87,7 +87,7 @@ export const getTerminalEmployeeTotal = async (req, res) => {
     const client = new DigestFetch("admin", "Abc112233");
 
     const hikvisionUrl =
-      "http://192.0.0.64/ISAPI/AccessControl/UserInfo/Search?format=json";
+      "http://192.168.88.242/ISAPI/AccessControl/UserInfo/Search?format=json";
 
     const payload = {
       UserInfoSearchCond: {
@@ -194,7 +194,7 @@ export const syncAllEmployeesToTerminal = async (req, res) => {
     const password = process.env.CAMERA_PASSWORD;
     const client = new DigestFetch(username, password);
 
-    const recordUrl = `http://192.0.0.64/ISAPI/AccessControl/UserInfo/Record?format=json`;
+    const recordUrl = `http://192.168.88.242/ISAPI/AccessControl/UserInfo/Record?format=json`;
 
     const dbEmployees = await Employee.find({});
     if (dbEmployees.length === 0)
@@ -261,7 +261,7 @@ export const syncAllFacesToTerminal = async (req, res) => {
   const extensions = [".jpg", ".jpeg", ".png"];
 
   const HIKVISION_URL =
-    "http://192.0.0.64/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json";
+    "http://192.168.88.242/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json";
 
   try {
     const employees = await Employee.find();

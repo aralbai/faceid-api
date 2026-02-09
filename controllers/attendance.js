@@ -30,7 +30,6 @@ export const getAttendances = async (req, res) => {
 };
 
 export const getAttendancesByActiveJurnal = async (req, res) => {
-  console.log("getAttendancesByActiveJurnal called");
   try {
     const activeJurnal = await ActiveJurnal.find();
     if (!activeJurnal || activeJurnal.length === 0) {
@@ -39,7 +38,12 @@ export const getAttendancesByActiveJurnal = async (req, res) => {
 
     const attendances = await Attendance.find({
       jurnalId: activeJurnal[0].jurnalId,
-    }).populate("employeeId");
+    }).populate({
+      path: "employeeId",
+      populate: {
+        path: "bolim",
+      },
+    });
 
     return res.status(200).json(attendances);
   } catch (error) {
@@ -49,9 +53,21 @@ export const getAttendancesByActiveJurnal = async (req, res) => {
 
 export const getLastFaceAttendance = async (req, res) => {
   try {
-    const lastAttendance = await Attendance.findOne()
+    const activeJurnal = await ActiveJurnal.find();
+    if (!activeJurnal || activeJurnal.length === 0) {
+      return res.status(404).json("Tadbir belgilanmagan");
+    }
+
+    const lastAttendance = await Attendance.findOne({
+      jurnalId: activeJurnal[0].jurnalId,
+    })
       .sort({ _id: -1 })
-      .populate("employeeId");
+      .populate({
+        path: "employeeId",
+        populate: {
+          path: "bolim",
+        },
+      });
 
     return res.status(200).json(lastAttendance);
   } catch (error) {

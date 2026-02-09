@@ -6,7 +6,10 @@ const employeeSchema = new mongoose.Schema({
   unvon: String,
   lavozim: String,
   pnfl: String,
-  bolim: String,
+  bolim: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Bolim",
+  },
 });
 
 const Employee = mongoose.model("Employee", employeeSchema);
