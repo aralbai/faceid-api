@@ -4,6 +4,8 @@ import {
   getAllEmployee,
   getAllEmployeesFromTerminal,
   getEmployeeByBolimId,
+  getTerminalEmployeeTotal,
+  getTerminalFaceTotal,
   syncAllEmployeesToTerminal,
   syncAllFacesToTerminal,
 } from "../controllers/employee.js";
@@ -14,7 +16,11 @@ router.get("/", getAllEmployee);
 
 router.get("/bolim/:bolimId", getEmployeeByBolimId);
 
-router.post("/getallfromterminal", getAllEmployeesFromTerminal);
+router.post("/get-terminal-employees", getAllEmployeesFromTerminal);
+
+router.post("/get-terminal-total", getTerminalEmployeeTotal);
+
+router.post("/get-terminal-face-total", getTerminalFaceTotal);
 
 router.post("/syncall", syncAllEmployeesToTerminal);
 

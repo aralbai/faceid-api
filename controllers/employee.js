@@ -18,6 +18,7 @@ export const getAllEmployee = async (req, res) => {
   }
 };
 
+// GET EMPLOYEES BY BOLIM ID
 export const getEmployeeByBolimId = async (req, res) => {
   const { bolimId } = req.params;
 
@@ -30,28 +31,119 @@ export const getEmployeeByBolimId = async (req, res) => {
   }
 };
 
-// GET ALL EMPLOYEES FROM TERMINAL
+// GET ALL EMPLOYEES FROM TERMINAL (JSON RESPONSE)
 export const getAllEmployeesFromTerminal = async (req, res) => {
   try {
-    const client = new DigestFetch(
-      process.env.CAMERA_USERNAME,
-      process.env.CAMERA_PASSWORD,
-    );
-
+    const client = new DigestFetch("admin", "Abc112233");
     const hikvisionUrl =
-      "http://192.168.88.143/ISAPI/AccessControl/UserInfo/Search?format=json";
-
+      "http://192.0.0.64/ISAPI/AccessControl/UserInfo/Search?format=json";
     let allUsers = [];
     let position = 0;
     const maxResults = 50;
     let hasMore = true;
-
     while (hasMore) {
       const payload = {
         UserInfoSearchCond: {
           searchID: "1",
           searchResultPosition: position,
           maxResults: maxResults,
+        },
+      };
+      const response = await client.fetch(hikvisionUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      const users = result?.UserInfoSearch?.UserInfo || [];
+      const totalMatches = result?.UserInfoSearch?.totalMatches || 0;
+      allUsers.push(...users);
+      position += users.length;
+      if (position >= totalMatches || users.length === 0) {
+        hasMore = false;
+      }
+    }
+    return res.status(200).json({
+      message: "Terminaldagi barcha employee lar olindi",
+      total: allUsers.length,
+      employees: allUsers.map((u) => ({
+        employeeNo: u.employeeNo,
+        name: u.name,
+        userType: u.userType,
+      })),
+    });
+  } catch (error) {
+    console.error("getAllEmployeesFromTerminal error:", error);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
+  }
+};
+
+// GET TOTAL EMPLOYEE COUNT IN TERMINAL
+export const getTerminalEmployeeTotal = async (req, res) => {
+  try {
+    const client = new DigestFetch("admin", "Abc112233");
+
+    const hikvisionUrl =
+      "http://192.0.0.64/ISAPI/AccessControl/UserInfo/Search?format=json";
+
+    const payload = {
+      UserInfoSearchCond: {
+        searchID: "count",
+        searchResultPosition: 0,
+        maxResults: 1,
+      },
+    };
+
+    const response = await client.fetch(hikvisionUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+
+    console.log("Hikvision javobi:", result);
+
+    const total = result?.UserInfoSearch?.totalMatches ?? 0;
+
+    console.log(`Terminalda jami xodimlar soni: ${total}`);
+
+    return res.status(200).json({
+      totalEmployees: total,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// GET TOTAL FACE COUNT IN TERMINAL
+export const getTerminalFaceTotal = async (req, res) => {
+  try {
+    const client = new DigestFetch("admin", "Abc112233");
+
+    const hikvisionUrl =
+      "http://192.0.0.64/ISAPI/AccessControl/UserInfo/Search?format=json";
+
+    let position = 0;
+    const maxResults = 30;
+    let hasMore = true;
+
+    let totalFaces = 0;
+
+    while (hasMore) {
+      const payload = {
+        UserInfoSearchCond: {
+          searchID: "faceCount",
+          searchResultPosition: position,
+          maxResults,
         },
       };
 
@@ -64,30 +156,30 @@ export const getAllEmployeesFromTerminal = async (req, res) => {
       });
 
       const result = await response.json();
+      console.log(`Hikvision javobi (position: ${position}):`, result);
+      const search = result?.UserInfoSearch;
 
-      const users = result?.UserInfoSearch?.UserInfo || [];
-      const totalMatches = result?.UserInfoSearch?.totalMatches || 0;
+      const users = search?.UserInfo || [];
 
-      allUsers.push(...users);
+      // 👉 faqat face borlarni sanaymiz
+      users.forEach((u) => {
+        if (Number(u.numOfFace) > 0) {
+          totalFaces += Number(u.numOfFace);
+        }
+      });
 
-      position += users.length;
-
-      if (position >= totalMatches || users.length === 0) {
+      if (search?.responseStatusStrg !== "MORE") {
         hasMore = false;
+      } else {
+        position += maxResults;
       }
     }
 
     return res.status(200).json({
-      message: "Terminaldagi barcha employee lar olindi",
-      total: allUsers.length,
-      employees: allUsers.map((u) => ({
-        employeeNo: u.employeeNo,
-        name: u.name,
-        userType: u.userType,
-      })),
+      totalFaces,
     });
   } catch (error) {
-    console.error("getAllEmployeesFromTerminal error:", error);
+    console.error("getTotalFaceCountFromTerminal error:", error);
     return res.status(500).json({
       message: "Server error",
       error: error.message,
@@ -102,9 +194,7 @@ export const syncAllEmployeesToTerminal = async (req, res) => {
     const password = process.env.CAMERA_PASSWORD;
     const client = new DigestFetch(username, password);
 
-    const deleteUrl = `http://192.168.88.234/ISAPI/AccessControl/UserInfo/Delete?format=json`;
-    const recordUrl = `http://192.168.88.125/ISAPI/AccessControl/UserInfo/Record?format=json`;
-    console.log("here");
+    const recordUrl = `http://192.0.0.64/ISAPI/AccessControl/UserInfo/Record?format=json`;
 
     const dbEmployees = await Employee.find({});
     if (dbEmployees.length === 0)
@@ -171,7 +261,7 @@ export const syncAllFacesToTerminal = async (req, res) => {
   const extensions = [".jpg", ".jpeg", ".png"];
 
   const HIKVISION_URL =
-    "http://198.162.88.125/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json";
+    "http://192.0.0.64/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json";
 
   try {
     const employees = await Employee.find();

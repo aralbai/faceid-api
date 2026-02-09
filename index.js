@@ -4,12 +4,14 @@ import http from "http";
 import { Server } from "socket.io";
 import mongoose from "mongoose";
 import AttendanceRouter from "./routes/attendance.js";
-import JurnalRouter from "./routes/journal.js";
+import JurnalRouter from "./routes/jurnal.js";
 import EmployeeRouter from "./routes/employee.js";
 import FaceEventRouter from "./routes/event.js";
 import BolimRouter from "./routes/bolim.js";
+import ActiveJurnalRouter from "./routes/activeJurnal.js";
+
 import cors from "cors";
-import multer from "multer";
+
 
 dotenv.config();
 
@@ -42,6 +44,7 @@ app.use("/jurnal", JurnalRouter);
 app.use("/attendance", AttendanceRouter);
 app.use("/employee", EmployeeRouter);
 app.use("/bolim", BolimRouter);
+app.use("/active-jurnal", ActiveJurnalRouter);
 
 server.listen(PORT, () => {
   console.log(`🚀 Server + Socket.IO running on port ${PORT}...`);

@@ -1,3 +1,4 @@
+import ActiveJurnal from "../models/ActiveJurnal.js";
 import Attendance from "../models/Attendance.js";
 
 export const createAttendance = async (req, res) => {
@@ -21,6 +22,24 @@ export const createAttendance = async (req, res) => {
 export const getAttendances = async (req, res) => {
   try {
     const attendances = await Attendance.find().populate("employeeId");
+
+    return res.status(200).json(attendances);
+  } catch (error) {
+    return res.status(500).json("server error");
+  }
+};
+
+export const getAttendancesByActiveJurnal = async (req, res) => {
+  console.log("getAttendancesByActiveJurnal called");
+  try {
+    const activeJurnal = await ActiveJurnal.find();
+    if (!activeJurnal || activeJurnal.length === 0) {
+      return res.status(404).json("Tadbir belgilanmagan");
+    }
+
+    const attendances = await Attendance.find({
+      jurnalId: activeJurnal[0].jurnalId,
+    }).populate("employeeId");
 
     return res.status(200).json(attendances);
   } catch (error) {

@@ -1,9 +1,23 @@
 import mongoose from "mongoose";
 
 const jurnalSchema = new mongoose.Schema({
-  name: String,
-  date: Date,
-});
+  name: {
+    type: String,
+    required: true,
+  },
+  date: {
+    type: Date,
+    required: true,
+  },
+  startTime: {
+    type: String,
+    required: true,
+  },
+  endTime: {
+    type: String,
+    required: true,
+  },    
+}, { timestamps: true });
 
 const Jurnal = mongoose.model("Jurnal", jurnalSchema);
 
