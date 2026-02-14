@@ -1,11 +1,16 @@
 import express from "express";
-import {  getBolimById, getBolims } from "../controllers/bolim.js";
+import {
+  getBolimById,
+  getBolimCountInDateRange,
+  getBolims,
+} from "../controllers/bolim.js";
 
 const router = express.Router();
 
 router.get("/", getBolims);
 
-router.get("/:bolimId", getBolimById);
+router.get("/count", getBolimCountInDateRange);
 
+router.get("/:bolimId", getBolimById);
 
 export default router;

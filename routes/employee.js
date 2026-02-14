@@ -3,6 +3,7 @@ import {
   deleteAllEmployeesFromTerminal,
   getAllEmployee,
   getAllEmployeesFromTerminal,
+  getEmployee,
   getEmployeeByBolimId,
   getTerminalEmployeeTotal,
   getTerminalFaceTotal,
@@ -13,6 +14,8 @@ import {
 const router = express.Router();
 
 router.get("/", getAllEmployee);
+
+router.get("/:id", getEmployee);
 
 router.get("/bolim/:bolimId", getEmployeeByBolimId);
 

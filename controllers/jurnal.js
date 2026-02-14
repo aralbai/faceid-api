@@ -5,7 +5,7 @@ export const createJurnal = async (req, res) => {
 
   if (!name || !date || !startTime || !endTime) {
     return res.status(400).json("Barcha maydonlar to'ldirilishi majburiy!");
-  } 
+  }
 
   try {
     const newJurnal = new Jurnal({
@@ -24,7 +24,6 @@ export const createJurnal = async (req, res) => {
 };
 
 export const getJurnal = async (req, res) => {
-
   const { id } = req.params;
 
   if (!id) return res.status(400).json("Id majburiy");
@@ -38,18 +37,17 @@ export const getJurnal = async (req, res) => {
   }
 };
 
-export const getJurnals = async (req, res) => {   
+export const getJurnals = async (req, res) => {
   try {
     const jurnals = await Jurnal.find().sort({ createdAt: -1 });
 
     return res.status(200).json(jurnals);
   } catch (error) {
     return res.status(500).json("Serverda xatolik yuz berdi!");
-  }     
+  }
 };
 
 export const getValidJurnals = async (req, res) => {
-
   try {
     const todayUTC = new Date();
     todayUTC.setUTCHours(0, 0, 0, 0);
@@ -65,37 +63,65 @@ export const getValidJurnals = async (req, res) => {
   }
 };
 
+export const getJurnalsCountInDateRange = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ message: "startDate va endDate kerak" });
+    }
+
+    // Kun boshidan
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    // Kun oxirigacha
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    // Masalan MongoDB bo‘lsa:
+    const count = await Jurnal.countDocuments({
+      createdAt: {
+        $gte: start,
+        $lte: end,
+      },
+    });
+
+    return res.status(200).json({ count });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
 
 export const deleteJurnal = async (req, res) => {
-  const { id } = req.params;    
+  const { id } = req.params;
   if (!id) return res.status(400).json("Id majburiy");
 
   try {
-    await Jurnal.findByIdAndDelete(id); 
+    await Jurnal.findByIdAndDelete(id);
     return res.status(200).json("Tadbir o'chirildi");
   } catch (error) {
     return res.status(500).json("Serverda xatolik yuz berdi!");
-  }     
+  }
 };
 
 export const updateJurnal = async (req, res) => {
-
-
-  const { id } = req.params;    
-  if (!id) return res.status(400).json("Id majburiy");    
+  const { id } = req.params;
+  if (!id) return res.status(400).json("Id majburiy");
   try {
     const updatedJurnal = await Jurnal.findByIdAndUpdate(
       id,
-      { 
+      {
         name: req.body.name,
         date: req.body.date,
         startTime: req.body.startTime,
         endTime: req.body.endTime,
       },
-      { new: true }
-    );    
+      { new: true },
+    );
     return res.status(200).json("Tadbir yangilandi");
   } catch (error) {
     return res.status(500).json("Serverda xatolik yuz berdi!");
-  }   
+  }
 };

@@ -1,11 +1,21 @@
 import express from "express";
-import { createJurnal, deleteJurnal, getJurnal, getJurnals, getValidJurnals, updateJurnal } from "../controllers/jurnal.js";
+import {
+  createJurnal,
+  deleteJurnal,
+  getJurnal,
+  getJurnals,
+  getJurnalsCountInDateRange,
+  getValidJurnals,
+  updateJurnal,
+} from "../controllers/jurnal.js";
 
 const router = express.Router();
 
 router.get("/", getJurnals);
 
 router.get("/valid", getValidJurnals);
+
+router.get("/count", getJurnalsCountInDateRange);
 
 router.get("/:id", getJurnal);
 

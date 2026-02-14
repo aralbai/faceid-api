@@ -2,15 +2,25 @@ import Employee from "../models/Employee.js";
 import DigestFetch from "digest-fetch";
 import fs from "fs";
 import path from "path";
-import sharp from "sharp"; // Rasmlarni JPEG qilish uchun
-import FormData from "form-data";
-import axios from "axios";
 import { exec } from "child_process";
 
 // GET ALL EMPLOYEES FROM DB
 export const getAllEmployee = async (req, res) => {
   try {
-    const employee = await Employee.find();
+    const employee = await Employee.find().populate("bolim", "name");
+
+    return res.status(200).json(employee);
+  } catch (error) {
+    return res.status(500).json("server error");
+  }
+};
+
+// GET EMPLOYEE BY ID
+export const getEmployee = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const employee = await Employee.findById(id).populate("bolim", "name");
 
     return res.status(200).json(employee);
   } catch (error) {
@@ -194,7 +204,7 @@ export const syncAllEmployeesToTerminal = async (req, res) => {
     const password = process.env.CAMERA_PASSWORD;
     const client = new DigestFetch(username, password);
 
-    const recordUrl = `http://192.168.88.242/ISAPI/AccessControl/UserInfo/Record?format=json`;
+    const recordUrl = `http://${process.env.CAMERA_EXIT_IP}/ISAPI/AccessControl/UserInfo/Record?format=json`;
 
     const dbEmployees = await Employee.find({});
     if (dbEmployees.length === 0)
@@ -260,8 +270,7 @@ export const syncAllFacesToTerminal = async (req, res) => {
   const IMAGES_DIR = path.resolve("images");
   const extensions = [".jpg", ".jpeg", ".png"];
 
-  const HIKVISION_URL =
-    "http://192.168.88.242/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json";
+  const HIKVISION_URL = `http://${process.env.CAMERA_EXIT_IP}/ISAPI/Intelligent/FDLib/FaceDataRecord?format=json`;
 
   try {
     const employees = await Employee.find();
