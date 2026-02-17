@@ -22,7 +22,9 @@ export const createAttendance = async (req, res) => {
 
 export const getAttendances = async (req, res) => {
   try {
-    const attendances = await Attendance.find().populate("employeeId");
+    const attendances = await Attendance.find()
+      .sort({ _id: -1 })
+      .populate("employeeId");
 
     return res.status(200).json(attendances);
   } catch (error) {
@@ -81,7 +83,7 @@ export const getLastFaceAttendance = async (req, res) => {
     const lastAttendance = await Attendance.findOne({
       jurnalId: activeJurnal[0].jurnalId,
     })
-      .sort({ _id: -1 })
+      .sort({ updatedAt: -1 })
       .populate({
         path: "employeeId",
         populate: {
