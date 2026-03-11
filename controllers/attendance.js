@@ -60,6 +60,7 @@ export const getAttendancesByActiveJurnal = async (req, res) => {
 
     const attendances = await Attendance.find({
       jurnalId: activeJurnal[0].jurnalId,
+      status: "Qatnashgan",
     }).populate({
       path: "employeeId",
       populate: {
@@ -82,6 +83,7 @@ export const getLastFaceAttendance = async (req, res) => {
 
     const lastAttendance = await Attendance.findOne({
       jurnalId: activeJurnal[0].jurnalId,
+      status: "Qatnashgan",
     })
       .sort({ updatedAt: -1 })
       .populate({

@@ -12,7 +12,6 @@ import ActiveJurnalRouter from "./routes/activeJurnal.js";
 
 import cors from "cors";
 
-
 dotenv.config();
 
 const app = express();
@@ -27,6 +26,7 @@ global.io = io;
 
 io.on("connection", (socket) => {
   console.log("🟢 Frontend ulandi:", socket.id);
+  console.log(process.env.CAMERA_ENTER_IP);
 });
 
 app.use(express.json());

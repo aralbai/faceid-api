@@ -4,6 +4,7 @@ import {
   getAllEmployee,
   getAllEmployeesFromTerminal,
   getEmployee,
+  getEmployeeAttendanceSummary,
   getEmployeeByBolimId,
   getTerminalEmployeeTotal,
   getTerminalFaceTotal,
@@ -16,6 +17,8 @@ const router = express.Router();
 router.get("/", getAllEmployee);
 
 router.get("/:id", getEmployee);
+
+router.get("/attendances/:employeeId", getEmployeeAttendanceSummary);
 
 router.get("/bolim/:bolimId", getEmployeeByBolimId);
 

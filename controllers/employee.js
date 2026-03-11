@@ -1,8 +1,83 @@
 import Employee from "../models/Employee.js";
+import Jurnal from "../models/Jurnal.js";
 import DigestFetch from "digest-fetch";
 import fs from "fs";
 import path from "path";
 import { exec } from "child_process";
+import Attendance from "../models/Attendance.js";
+
+// GET /employees/:employeeId/attendance-summary
+export const getEmployeeAttendanceSummary = async (req, res) => {
+  const { employeeId } = req.params;
+
+  const employee = await Employee.findById(employeeId);
+  if (!employee) {
+    return res.status(404).json({ message: "Employee topilmadi" });
+  }
+
+  const jurnals = await Jurnal.find().sort({ date: -1 });
+  const attendances = await Attendance.find({ employeeId });
+
+  const attendanceMap = new Map();
+  attendances.forEach((a) => {
+    attendanceMap.set(a.jurnalId.toString(), a);
+  });
+
+  // Sababli statuslar
+  const excusedStatuses = ["Naryad", "Ruxsatli", "Ta'til", "Kasal"];
+
+  let attendedCount = 0;
+  let excusedCount = 0;
+  let missedCount = 0;
+
+  const result = jurnals.map((jurnal) => {
+    const attendance = attendanceMap.get(jurnal._id.toString());
+
+    if (!attendance) {
+      missedCount++;
+      return {
+        jurnalId: jurnal._id,
+        jurnalName: jurnal.name,
+        date: jurnal.date,
+        status: "Qatnashmagan",
+      };
+    }
+
+    if (attendance.status === "Qatnashgan") {
+      attendedCount++;
+    } else if (excusedStatuses.includes(attendance.status)) {
+      excusedCount++;
+    }
+
+    return {
+      jurnalId: jurnal._id,
+      jurnalName: jurnal.name,
+      date: jurnal.date,
+      status: attendance.status,
+      startDate: attendance?.startDate || null,
+      endDate: attendance?.endDate || null,
+    };
+  });
+
+  const totalJurnals = jurnals.length;
+
+  const attendancePercentage =
+    totalJurnals === 0
+      ? 0
+      : Number(((attendedCount / totalJurnals) * 100).toFixed(1));
+
+  return res.status(200).json({
+    employee,
+    statistics: {
+      totalJurnals,
+      attendedCount,
+      excusedCount,
+      missedCount,
+      attendancePercentage,
+    },
+    attendances: result,
+  });
+};
 
 // GET ALL EMPLOYEES FROM DB
 export const getAllEmployee = async (req, res) => {
